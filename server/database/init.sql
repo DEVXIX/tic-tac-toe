@@ -1,0 +1,2 @@
+-- Database initialization
+-- Prisma will handle table creation via migrations

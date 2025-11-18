@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #ff5622;
+  --color-text: #434b51;
+}
+
+@font-face {
+  font-family: "Gibson";
+  src: url("https://beaconred.ae/themes/contrib/edgegroup/dist/fonts/Gibson-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Gibson";
+  src: url("https://beaconred.ae/themes/contrib/edgegroup/dist/fonts/Gibson-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  margin: 0;
+  font-family: "Gibson", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

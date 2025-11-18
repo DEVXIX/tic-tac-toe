@@ -1,0 +1,29 @@
+{
+  "name": "tic-tac-toe-server",
+  "version": "1.0.0",
+  "description": "Multiplayer Tic-Tac-Toe backend server",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --env-file=.env --watch index.js",
+    "start": "bun --env-file=.env index.js",
+    "db:migrate": "bunx prisma migrate dev",
+    "db:generate": "bunx prisma generate",
+    "db:studio": "bunx prisma studio",
+    "db:push": "bunx prisma db push"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.0"
+  }
+}
