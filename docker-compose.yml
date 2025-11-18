@@ -24,9 +24,6 @@ services:
       context: ./server
     env_file:
       - ./server/.env
-    environment:
-      DATABASE_URL: postgresql://beaconred-quiz:beaconred-quiz@postgres:5432/db
-      CLIENT_URLS: http://localhost:4173
     ports:
       - "3001:3001"
     depends_on:
