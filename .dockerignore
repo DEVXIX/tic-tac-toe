@@ -1,0 +1,14 @@
+# Global ignores for Docker build context
+.git
+node_modules
+client/node_modules
+server/node_modules
+client/.tanstack
+client/.vscode
+server/.vscode
+client/.env
+server/.env
+postgres.env
+postgres.env.example
+*.log
+.data

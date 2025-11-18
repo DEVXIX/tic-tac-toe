@@ -8,12 +8,29 @@ import { GameManager } from "./game/manager.js";
 console.log("Environment variables loaded:");
 console.log("DATABASE_URL:", process.env.DATABASE_URL);
 console.log("PORT:", process.env.PORT);
+console.log("CLIENT_URL(S):", process.env.CLIENT_URLS || process.env.CLIENT_URL);
+
+const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "http://localhost:3000")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("Not allowed by CORS"));
+  },
+  methods: ["GET", "POST"],
+  credentials: true
+};
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: allowedOrigins,
     methods: ["GET", "POST"]
   },
   pingTimeout: 60000,
@@ -22,7 +39,7 @@ const io = new Server(httpServer, {
 
 const gameManager = new GameManager(io, prisma);
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.get("/health", (req, res) => {

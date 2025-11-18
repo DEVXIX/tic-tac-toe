@@ -12,10 +12,38 @@ services:
     env_file: postgres.env
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
       interval: 30s
       timeout: 30s
       retries: 3
+    networks:
+      - beaconred-quiz-intranet
+
+  server:
+    build:
+      context: ./server
+    env_file:
+      - ./server/.env
+    environment:
+      DATABASE_URL: postgresql://beaconred-quiz:beaconred-quiz@postgres:5432/db
+      CLIENT_URLS: http://localhost:4173
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - beaconred-quiz-intranet
+
+  client:
+    build:
+      context: ./client
+      args:
+        VITE_SERVER_URL: http://localhost:3001
+    ports:
+      - "4173:80"
+    depends_on:
+      - server
     networks:
       - beaconred-quiz-intranet
 

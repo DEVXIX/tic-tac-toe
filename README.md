@@ -1,76 +1,87 @@
 # Tic-Tac-Toe Multiplayer
 
-Small real-time Tic-Tac-Toe built with Bun, Express, Socket.io, Prisma, React, and Tailwind. Follow the steps below to spin up the full stack locally.
+Real-time Tic-Tac-Toe built with Bun, Express, Socket.io, Prisma, React, and Tailwind.
 
 ## Prerequisites
 
 - [Bun](https://bun.sh) 1.2+
 - Docker + Docker Compose
-- Node-compatible browser (Chrome, Edge, etc.)
+- Recent browser (Chrome, Edge, etc.)
 
-## 1. Configure PostgreSQL
+## 1. Prepare environment files
 
-1. Copy the provided template and fill in your own credentials if needed:
+Templates live next to each app; copy them before running anything:
 
-   ```powershell
-   Copy-Item postgres.env.example postgres.env
+```sh
+cp postgres.env.example postgres.env
+cp server/.env.example server/.env
+cp client/.env.example client/.env
+```
+
+- `postgres.env` controls the Postgres container (db name, user, password).
+- `server/.env` must point `DATABASE_URL` at that database. When running via Docker Compose, set the host to `postgres` (e.g., `postgresql://user:pass@postgres:5432/db`). When running the server on your machine, `localhost` is fine. Use `CLIENT_URL` (or comma-separated `CLIENT_URLS`) to list the front-end origins allowed via CORS.
+- `client/.env` needs `VITE_SERVER_URL` (defaults to `http://localhost:3001`).
+
+## 2. Option A – run everything with Docker
+
+`docker-compose.yml` now includes Postgres, the Bun API, and the static client (served by Nginx).
+
+```sh
+docker compose up -d --build
+```
+
+- Postgres: `5432` → container `postgres`
+- API: `http://localhost:3001`
+- Client: `http://localhost:4173`
+
+Once the stack finishes building, visit `http://localhost:4173` in your browser—this serves the production React build that talks to the API on port 3001.
+
+If you change Postgres credentials, mirror the same values inside `docker-compose.yml` (server service `DATABASE_URL`).
+
+Stop the stack when finished:
+
+```sh
+docker compose down
+```
+
+Need to pre-build without starting containers? Run:
+
+```sh
+docker compose build
+```
+
+Then launch whenever you’re ready with `docker compose up -d`.
+
+## 3. Option B – run locally with Bun
+
+1. Start (or keep) the Postgres container:
+
+   ```sh
+   docker compose up -d postgres
    ```
 
-2. Update `postgres.env` with your desired database name, username, and password. The backend expects the same values that are already referenced in `server/.env.example`.
+2. Install dependencies once per workspace:
 
-3. Start the database container:
-
-   ```powershell
-   docker compose up -d
+   ```sh
+   cd server && bun install
+   cd ../client && bun install
    ```
 
-   The `postgres` service now exposes port `5432` with the credentials from `postgres.env`.
+3. Run both dev servers in separate terminals:
 
-## 2. Environment files
+   ```sh
+   # Backend
+   cd server && bun run dev
 
-Create `.env` files for both the server and the client using their examples. Each file only needs the variables already listed.
+   # Frontend
+   cd client && bun run dev
+   ```
 
-```powershell
-Copy-Item server/.env.example server/.env
-Copy-Item client/.env.example client/.env
-```
+Backend → `http://localhost:3001`, Frontend → `http://localhost:3000`.
 
-- `server/.env` must point `DATABASE_URL` to the Postgres instance from the previous step.
-- `client/.env` should include the backend URL (defaults to `http://localhost:3001`).
+## Troubleshooting
 
-## 3. Install dependencies
-
-Run Bun install inside each workspace folder once.
-
-```powershell
-cd server
-bun install
-
-cd ../client
-bun install
-```
-
-## 4. Run the stack
-
-Start the backend first so Socket.io and Prisma are ready, then start the React client.
-
-```powershell
-# Terminal 1
-cd server
-bun run dev
-
-# Terminal 2
-cd client
-bun run dev
-```
-
-- Server listens on `http://localhost:3001` (configurable via `server/.env`).
-- Client Vite dev server runs on `http://localhost:3000`.
-
-Open `http://localhost:3000` in two browser windows to create a lobby, join games, and play in real time. Game records write to Postgres after each match, and the lobby shows the latest history plus active games.
-
-## Troubleshooting tips
-
-- If the backend errors with `DATABASE_URL undefined`, re-check that `server/.env` is saved in UTF-8 (no UTF-16 BOM) and matches your Postgres credentials.
-- Run `bun run db:migrate` inside `server/` if you need to recreate the Prisma schema or after changing the database connection.
-- Use `docker compose logs postgres -f` to verify the database is healthy.
+- `DATABASE_URL undefined`: ensure `server/.env` is UTF-8 encoded (no UTF-16 BOM) and matches your Postgres credentials. Recopy the example if needed.
+- Prisma schema changes: `cd server && bun run db:migrate`.
+- Docker stack feels stale: `docker compose down -v` clears containers + volumes (you’ll lose DB data).
+- Logs: `docker compose logs -f server`, `docker compose logs -f client`, or `docker compose logs -f postgres`.
