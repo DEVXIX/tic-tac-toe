@@ -14,13 +14,37 @@ export function GameBoard({ gameId, playerName, player1Name, player2Name, onGame
   const { socket } = useSocket();
   const [board, setBoard] = useState<Array<string | null>>(Array(9).fill(null));
   const [currentTurn, setCurrentTurn] = useState<"X" | "O">("X");
-  const [mySymbol] = useState<"X" | "O">(player1Name === playerName ? "X" : "O");
   const [winner, setWinner] = useState<string | null>(null);
   const [showWinner, setShowWinner] = useState(false);
 
+  // Calculate mySymbol directly from props so it updates when roles change
+  const mySymbol: "X" | "O" = player1Name === playerName ? "X" : "O";
+
   useEffect(() => {
+    console.log(`GameBoard mounted for ${playerName}, gameId: ${gameId}, mySymbol: ${mySymbol}`);
+    console.log(`Player names - player1: ${player1Name}, player2: ${player2Name}`);
+    
+    // Reset state when component mounts for a new game
+    setBoard(Array(9).fill(null));
+    setCurrentTurn("X"); // Game always starts with X
+    setWinner(null);
+    setShowWinner(false);
+
+    function handleGameStarted(data: { gameId: string; player1: string; player2: string; board: Array<string | null>; currentTurn: "X" | "O" }) {
+      console.log(`GameBoard received game_started:`, data);
+      
+      // Only process if this is for our game and both players are present
+      if (data.gameId === gameId && data.player2 !== "Waiting...") {
+        console.log(`Syncing state for game ${gameId}: currentTurn=${data.currentTurn}`);
+        setBoard(data.board);
+        setCurrentTurn(data.currentTurn);
+        setWinner(null);
+        setShowWinner(false);
+      }
+    }
 
     function handleMoveMade(data: { position: number; symbol: "X" | "O"; board: Array<string | null>; currentTurn: "X" | "O" }) {
+      console.log(`Move made: position=${data.position}, symbol=${data.symbol}, currentTurn=${data.currentTurn}, mySymbol=${mySymbol}`);
       setBoard(data.board);
       setCurrentTurn(data.currentTurn);
     }
@@ -41,22 +65,36 @@ export function GameBoard({ gameId, playerName, player1Name, player2Name, onGame
       }, 3000);
     }
 
+    socket.on("game_started", handleGameStarted);
     socket.on("move_made", handleMoveMade);
     socket.on("game_ended", handleGameEnded);
     socket.on("player_disconnected", handlePlayerDisconnected);
 
     return () => {
+      socket.off("game_started", handleGameStarted);
       socket.off("move_made", handleMoveMade);
       socket.off("game_ended", handleGameEnded);
       socket.off("player_disconnected", handlePlayerDisconnected);
     };
-  }, [socket, onGameEnd]);
+  }, [socket, gameId, mySymbol, playerName, player1Name, player2Name, onGameEnd]);
 
   const handleMove = (position: number) => {
-    if (board[position] !== null) return;
-    if (currentTurn !== mySymbol) return;
-    if (winner) return;
+    console.log(`Move attempt: position=${position}, board[position]=${board[position]}, currentTurn=${currentTurn}, mySymbol=${mySymbol}, winner=${winner}`);
+    
+    if (board[position] !== null) {
+      console.log(`Move blocked: position ${position} already occupied`);
+      return;
+    }
+    if (currentTurn !== mySymbol) {
+      console.log(`Move blocked: not my turn (currentTurn=${currentTurn}, mySymbol=${mySymbol})`);
+      return;
+    }
+    if (winner) {
+      console.log(`Move blocked: game has winner ${winner}`);
+      return;
+    }
 
+    console.log(`Emitting make_move for position ${position} with gameId ${gameId}`);
     socket.emit("make_move", { gameId, position });
   };
 
