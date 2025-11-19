@@ -27,8 +27,14 @@ cp client/.env.example client/.env
 `docker-compose.yml` now includes Postgres, the Bun API, and the static client (served by Nginx).
 
 ```sh
+# Build and start all services with database initialization
+docker-compose up --build -d
+
+# Alternative syntax (same result)
 docker compose up -d --build
 ```
+
+**Database Initialization**: On first run, PostgreSQL will automatically initialize with the `beaconred` user and run Prisma migrations via the embedded Dockerfile entrypoint script.
 
 - Postgres: `5432` → container `postgres`
 - API: `http://localhost:3001`
