@@ -21,7 +21,7 @@ EXPOSE 3001
 # Create an entrypoint script that handles database migration
 RUN echo '#!/bin/sh\n\
 echo "Waiting for database to be ready..."\n\
-until pg_isready -h postgres -p 5432 -U beaconred-quiz; do\n\
+until pg_isready -h postgres -p 5432 -U beaconred; do\n\
   echo "Database is unavailable - sleeping"\n\
   sleep 2\n\
 done\n\
