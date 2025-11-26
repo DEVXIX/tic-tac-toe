@@ -3,7 +3,10 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import prisma from "./database/client.js";
-import { GameManager } from "./game/manager.js";
+import { GameRepository } from "./game/game-repository.js";
+import { UserManager } from "./game/user-manager.js";
+import { GameStateManager } from "./game/game-state-manager.js";
+import { SocketHandler } from "./game/socket-handler.js";
 
 console.log("Environment variables loaded:");
 console.log("DATABASE_URL:", process.env.DATABASE_URL);
@@ -37,7 +40,11 @@ const io = new Server(httpServer, {
   pingInterval: 25000
 });
 
-const gameManager = new GameManager(io, prisma);
+// Initialize services
+const gameRepository = new GameRepository(prisma);
+const userManager = new UserManager(io);
+const gameStateManager = new GameStateManager(io, gameRepository);
+const socketHandler = new SocketHandler(io, gameStateManager, userManager, gameRepository);
 
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -59,42 +66,18 @@ app.get("/api/games/history", async (req, res) => {
 });
 
 app.get("/api/games/active", (req, res) => {
-  const activeGames = gameManager.getActiveGames();
+  const activeGames = gameStateManager.getActiveGames();
   res.json({ games: activeGames });
+});
+
+app.get("/api/users/online", (req, res) => {
+  const users = userManager.getOnlineUsers();
+  res.json({ users });
 });
 
 io.on("connection", (socket) => {
   console.log(`Player connected: ${socket.id}`);
-
-  socket.on("register_user", (data) => {
-    gameManager.addOnlineUser(socket.id, data.playerName);
-  });
-
-  socket.on("request_online_users", () => {
-    const users = Array.from(gameManager.onlineUsers.values());
-    socket.emit("online_users_updated", { users });
-  });
-
-  socket.on("request_active_games", () => {
-    const activeGames = gameManager.getActiveGames();
-    socket.emit("active_games_updated", { games: activeGames });
-  });
-
-  socket.on("create_game", (data) => {
-    gameManager.createGame(socket, data.playerName);
-  });
-
-  socket.on("join_game", (data) => {
-    gameManager.joinGame(socket, data.gameId, data.playerName);
-  });
-
-  socket.on("make_move", (data) => {
-    gameManager.makeMove(socket, data.gameId, data.position);
-  });
-
-  socket.on("disconnect", () => {
-    gameManager.handleDisconnect(socket);
-  });
+  socketHandler.setupHandlers(socket);
 });
 
 const PORT = process.env.PORT || 3001;

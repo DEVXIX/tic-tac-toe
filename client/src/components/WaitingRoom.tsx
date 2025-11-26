@@ -27,7 +27,7 @@ export function WaitingRoom({ gameId, playerName }: WaitingRoomProps) {
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-12 shadow-sm">
           <div className="mb-6 flex justify-center">
-            <div className="w-16 h-16 border-4 border-gray-200 border-t-[#ff5622] rounded-full animate-spin" />
+            <div className="w-16 h-16 border-4 border-gray-200 border-t-primary rounded-full animate-spin" />
           </div>
           <h2 className="text-2xl font-semibold text-gray-800 mb-2">Waiting for opponent{dots}</h2>
           <p className="text-gray-600 mb-6">Another player will join shortly.</p>
